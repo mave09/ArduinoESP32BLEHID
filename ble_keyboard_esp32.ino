@@ -3,6 +3,7 @@
 #include <WebSocketsServer.h>
 #include <BleKeyboard.h>
 
+const int ledPin = 2;
 const char* ssid = "GlobeAtHome_CC5E7_2.4";
 const char* password = "2B922CE7";
 
@@ -21,7 +22,7 @@ void keepAwake() {
   bleKeyboard.press(KEY_LEFT_ARROW);
   delay(20);
   bleKeyboard.release(KEY_LEFT_ARROW);
-
+  bleKeyboard.releaseAll();
   Serial.print("KEEP ALIVE SENT: ");
   Serial.println(keepAliveInterval);
 }
@@ -169,6 +170,14 @@ void handleWS(String msg) {
     return;
   }
 
+  // 🔥 COMBO
+  if (msg.startsWith("COMBO:")) {
+    String combo = msg.substring(6);
+    Serial.println("COMBO: " + combo);
+    sendCombo(combo);
+    return;
+  }
+
   if (msg.startsWith("KD:")) {
     String key = msg.substring(3);
     uint8_t k = getKey(key);
@@ -209,6 +218,8 @@ void onWS(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
 
 // ---------- SETUP ----------
 void setup() {
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(115200);
   Serial.begin(115200);
 
   WiFi.begin(ssid, password);
@@ -251,6 +262,15 @@ void loop() {
   if (keepAliveEnabled && millis() - lastKeepAlive > keepAliveInterval) {
     keepAwake();
     lastKeepAlive = millis();
+
+
+    
     keepAliveInterval = random(100000, 120000);
+  }
+
+  if (keepAliveEnabled > 30) {
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
   }
 }
